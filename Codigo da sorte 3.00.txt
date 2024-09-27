@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorteio de Bolinhas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 320px;
+            margin-bottom: 20px;
+        }
+        .ball {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .flipped {
+            background-color: #333;
+            color: transparent;
+        }
+        .selected {
+            background-color: gold;
+        }
+        #selectedNumbers {
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <label for="range">Escolha o intervalo de números:</label>
+        <select id="range">
+            <option value="6">1 até 6 (Escolher até 2)</option>
+            <option value="25">1 até 25 (Escolher até 15)</option>
+            <option value="60">1 até 60 (Escolher até 6)</option>
+            <option value="50">1 até 50 (Escolher até 6)</option>
+        </select>
+        <button onclick="start()">Começar</button>
+    </div>
+
+    <div class="container" id="ballContainer"></div>
+    <div id="selectedNumbers"></div>
+
+    <script>
+        const container = document.getElementById("ballContainer");
+        const selectedNumbersDiv = document.getElementById("selectedNumbers");
+        const rangeSelect = document.getElementById("range");
+        let selectedBalls = 0;
+        let selectedNumbers = [];
+        let maxBalls = 0;
+
+        // Função para criar bolinhas numeradas
+        function createBalls(range) {
+            container.innerHTML = ''; // Limpa as bolinhas anteriores
+            selectedNumbers = [];
+            selectedBalls = 0;
+            selectedNumbersDiv.textContent = '';
+
+            for (let i = 1; i <= range; i++) {
+                const ball = document.createElement("div");
+                ball.classList.add("ball");
+                ball.textContent = i;
+                ball.dataset.number = i;
+                ball.onclick = selectBall;
+                container.appendChild(ball);
+            }
+        }
+
+        // Algoritmo Fisher-Yates para embaralhar
+        function fisherYatesShuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Função de random sort (sort baseado em Math.random)
+        function randomSort(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+        // Funções de embaralhamento dinâmico que variam a cada execução
+        function dynamicShuffle(balls) {
+            const methods = [
+                () => { // Fisher-Yates triplo
+                    fisherYatesShuffle(balls);
+                    fisherYatesShuffle(balls);
+                    fisherYatesShuffle(balls);
+                },
+                () => { // Fisher-Yates duplo com Random Sort
+                    fisherYatesShuffle(balls);
+                    fisherYatesShuffle(balls);
+                    randomSort(balls);
+                },
+                () => { // Fisher-Yates simples com Random Sort
+                    fisherYatesShuffle(balls);
+                    randomSort(balls);
+                },
+                () => { // Fisher-Yates simples
+                    fisherYatesShuffle(balls);
+                }
+            ];
+
+            // Escolhe três métodos diferentes de embaralhamento
+            const sequence = [
+                methods[Math.floor(Math.random() * methods.length)],
+                methods[Math.floor(Math.random() * methods.length)],
+                methods[Math.floor(Math.random() * methods.length)]
+            ];
+
+            // Executa os três métodos de embaralhamento escolhidos
+            sequence.forEach(method => method());
+        }
+
+        // Função para embaralhar as bolinhas
+        function shuffleBalls() {
+            const balls = Array.from(container.children);
+            balls.forEach(ball => {
+                ball.classList.add("flipped");
+            });
+
+            setTimeout(() => {
+                // Aplica o embaralhamento dinâmico
+                dynamicShuffle(balls);
+
+                // Rearranja as bolinhas embaralhadas no DOM
+                balls.forEach(ball => container.appendChild(ball));
+            }, 500); // Embaralha após meio segundo
+        }
+
+        // Função para selecionar bolinhas
+        function selectBall() {
+            if (selectedBalls < maxBalls && !this.classList.contains("selected")) {
+                this.classList.add("selected");
+                selectedBalls++;
+                selectedNumbers.push(this.dataset.number);
+
+                if (selectedBalls === maxBalls) {
+                    showSelectedNumbers();
+                }
+            }
+        }
+
+        // Função para mostrar os números selecionados
+        function showSelectedNumbers() {
+            selectedNumbersDiv.textContent = `Você escolheu os números: ${selectedNumbers.join(", ")}`;
+        }
+
+        // Função para iniciar o processo
+        function start() {
+            const range = parseInt(rangeSelect.value);
+            if (range === 6) {
+                maxBalls = 2;  // Caso "a"
+            } else if (range === 25) {
+                maxBalls = 15;  // Caso "b"
+            } else if (range === 60 || range === 50) {
+                maxBalls = 6;  // Caso "c" e "d"
+            }
+            
+            createBalls(range);
+
+            setTimeout(() => {
+                shuffleBalls();
+            }, 3000); // Bolinhas viram de costas e embaralham após 3 segundos
+        }
+    </script>
+</body>
+</html>
